@@ -92,25 +92,29 @@ fn process_command(cmd: &str, params: Vec<&str>) {
                 }
             }
         },
-        _ => {
-            let exec = search_for_exec(cmd, path);
+        "exec" => {
+            let exec_arg = params.get(0).unwrap().to_owned();
+            let exec = search_for_exec(exec_arg, path);
 
             match exec {
                 Some(val) => {
                     let mut command = Command::new(val);
 
-                    for param in params {
+                    for param in params[1..].iter() {
                         command.arg(param);
                     }
-                    command.spawn().unwrap();
-
-                    println!();
+                    let child = command.spawn().unwrap();
+                    println!("\n");
+                    child.wait_with_output().unwrap();
                 },
                 None => {
                     eprintln!("{cmd}: command not found");
                 }
             }
-        }
+        },
+        _ => {
+            eprintln!("{cmd}: not a shell command");
+        },
     }
 }
 
