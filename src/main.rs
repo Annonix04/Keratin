@@ -1,5 +1,6 @@
 use std::{
     path::Path,
+    fs,
     collections::HashMap,
     process::{
         Command,
@@ -67,15 +68,31 @@ fn process_command(cmd: &str, params: Vec<&str>) -> Result<(), Box<dyn Error>> {
 
     let builtins: HashMap<&str, &str> = HashMap::from_iter(vec![
         ("echo", "[argument(s): message] print message to stdout"),
+        ("this", "print the current location in the file tree"),
         ("type", "[argument(s): file] print the location of an executable"),
         ("exec", "[argument(s): program, parameters (optional)] run an executable"),
         ("exit", "[argument(s): exit code (optional)] exit the shell"),
         ("path", "print every directory in the PATH environment variable"),
         ("clr", "clear the screen"),
-        ("help", "[argument(s): shell command (optional)] show this screen, information about a command"),
+        ("help", "[argument(s): shell command (optional)] show this screen or information about a command"),
     ]);
 
     match cmd {
+        "this" => {
+            let loc = env::current_dir()?;
+            let dir = fs::read_dir(loc)?;
+
+
+            for entry in dir {
+                let entry = entry?;
+                let file_name = entry.file_name();
+
+                let res = file_name.to_str().unwrap();
+                println!("{res}")
+            }
+
+            Ok(())
+        },
         "exit" => {
             io::stdout().flush()?;
 
