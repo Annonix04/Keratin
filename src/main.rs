@@ -126,7 +126,11 @@ fn process_command(cmd: &str, params: Vec<&str>) -> Result<(), Box<dyn Error>> {
             Ok(())
         },
         "type" => {
-            let arg = params.get(0).unwrap();
+            if let None = params.get(0) {
+                eprintln!("command failed 'type': please provide an argument");
+                return Ok(())
+            };
+            let arg = params.get(0).unwrap().to_owned();
 
             match arg.to_owned() {
                 _ if builtins.contains_key(arg) => {
@@ -145,6 +149,11 @@ fn process_command(cmd: &str, params: Vec<&str>) -> Result<(), Box<dyn Error>> {
             Ok(())
         },
         "exec" => {
+            if let None = params.get(0) {
+                eprintln!("command failed 'exec': please provide an argument");
+                return Ok(())
+            }
+
             let exec_arg = params.get(0).unwrap().to_owned();
             let exec = search_for_exec(exec_arg, path);
 
