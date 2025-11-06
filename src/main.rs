@@ -1,8 +1,11 @@
 use std::{
     fs,
     error::Error,
-    path::Path,
     collections::HashMap,
+    path::{
+        Path,
+        PathBuf
+    },
     process::{
         Command,
         exit,
@@ -16,7 +19,6 @@ use std::{
         var
     },
 };
-use std::path::PathBuf;
 
 //TODO: implement command history logging w/ timestamps
 const PROMPT: &str = "#~ ";
@@ -32,7 +34,7 @@ fn main() {
 
         if raw_line.is_empty() { continue; }
 
-        let line = raw_line.split(" ").collect::<Vec<&str>>();
+        let line = raw_line.trim().split(' ').collect::<Vec<&str>>();
 
         let cmd = line.get(0).unwrap().to_owned();
         let params = if line.len() > 1 { line[1..].to_vec() } else { Vec::new() };
@@ -89,7 +91,14 @@ fn process_command(cmd: &str, params: Vec<&str>) -> Result<(), Box<dyn Error>> {
                 return Ok(())
             }
 
+            let home = if env::consts::OS == "windows" { "USERPROFILE" } else { "HOME" };
             let dir = params.get(0).unwrap().to_owned();
+            if dir == "~" {
+                env::set_current_dir(var(home)?)?;
+
+                return Ok(())
+            }
+
             let curr = env::current_dir()?;
             let target = Path::new(&dir);
             let mut target_buf = PathBuf::from(target);
