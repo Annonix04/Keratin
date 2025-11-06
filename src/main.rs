@@ -14,11 +14,15 @@ use std::{
         var
     },
 };
+use std::error::Error;
 
+//TODO: implement command history logging w/ timestamps
 const PROMPT: &str = "#~ ";
 
 fn main() {
-    process_command("clr", vec![""]);
+    if let Err(e) = process_command("clr", Vec::new()) {
+        eprintln!("failed to execute command 'clr': {e}");
+    }
     io::stdout().flush().unwrap();
 
     loop {
@@ -31,7 +35,12 @@ fn main() {
         let cmd = line.get(0).unwrap().to_owned();
         let params = if line.len() > 1 { line[1..].to_vec() } else { Vec::new() };
 
-        process_command(cmd, params);
+        match process_command(cmd, params) {
+            Ok(_) => {},
+            Err(e) => {
+                eprintln!("failed to execute command '{cmd}': {e}");
+            }
+        };
 
         io::stdout().flush().unwrap();
     }
@@ -50,8 +59,8 @@ fn get_command() -> String {
     command.trim().to_string()
 }
 
-fn process_command(cmd: &str, params: Vec<&str>) {
-    let raw_path = var("PATH").unwrap();
+fn process_command(cmd: &str, params: Vec<&str>) -> Result<(), Box<dyn Error>> {
+    let raw_path = var("PATH")?;
     let path = env::split_paths(&raw_path)
         .map(|p| p.to_string_lossy().into_owned())
         .collect::<Vec<String>>();
@@ -63,41 +72,58 @@ fn process_command(cmd: &str, params: Vec<&str>) {
         ("exit", "[argument(s): exit code (optional)] exit the shell"),
         ("path", "print every directory in the PATH environment variable"),
         ("clr", "clear the screen"),
-        ("help", "show this screen"),
+        ("help", "[argument(s): shell command (optional)] show this screen, information about a command"),
     ]);
 
     match cmd {
         "exit" => {
-            io::stdout().flush().unwrap();
+            io::stdout().flush()?;
 
             if params.is_empty() {
                 exit(0);
             }
 
-            exit(params[0].parse::<i32>().unwrap());
+            exit(params[0].parse::<i32>()?);
         },
         "help" => {
-            for (k, v) in builtins {
-                println!(" - {k:<5} : {v}");
+            if params.is_empty() {
+                for (k, v) in builtins {
+                    println!(" - {k:<5} : {v}");
+                }
+            } else {
+                let target = params
+                    .get(0)
+                    .unwrap()
+                    .to_owned();
+                let text = builtins
+                    .get(&target)
+                    .unwrap_or_else(|| &"this shell command doesn't exist")
+                    .to_owned();
+
+                println!(" - {target:<5} : {text}");
             }
+            Ok(())
         },
         "echo" => {
             let arg = params.join(" ");
 
             println!("{arg}");
+            Ok(())
         },
         "clr" => {
             if env::consts::OS == "windows" {
                 Command::new("cmd")
                     .args(&["/C", "cls"])
-                    .status().unwrap();
+                    .status()?;
             } else {
                 Command::new("clear")
-                    .status().unwrap();
+                    .status()?;
             }
+            Ok(())
         },
         "path" => {
             println!("{path:?}");
+            Ok(())
         },
         "type" => {
             let arg = params.get(0).unwrap();
@@ -116,6 +142,7 @@ fn process_command(cmd: &str, params: Vec<&str>) {
                     }
                 }
             }
+            Ok(())
         },
         "exec" => {
             let exec_arg = params.get(0).unwrap().to_owned();
@@ -128,16 +155,18 @@ fn process_command(cmd: &str, params: Vec<&str>) {
                     for param in params[1..].iter() {
                         command.arg(param);
                     }
-                    command.status().unwrap();
+                    command.status()?;
                     println!("\n");
                 },
                 None => {
                     eprintln!("{cmd}: command not found");
                 }
             }
+            Ok(())
         },
         _ => {
             eprintln!("{cmd}: not a shell command");
+            Ok(())
         },
     }
 }
