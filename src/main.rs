@@ -14,7 +14,7 @@ use std::{
     },
 };
 
-const PROMPT: &str = "$ ";
+const PROMPT: &str = "#~ ";
 
 fn main() {
     loop {

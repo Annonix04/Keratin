@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ZLSSettings">
+    <option name="debug" value="true" />
+    <option name="messageTrace" value="true" />
+    <option name="zlsPath" value="C:\Users\braed\.zvm\bin\zls.exe" />
+  </component>
+  <component name="ZigProjectSettings">
+    <option name="toolchainPath" value="C:\Users\braed\.zvm\bin" />
+  </component>
+</project>
