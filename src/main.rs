@@ -62,13 +62,16 @@ fn get_command() -> String {
 
 fn process_command(cmd: &str, params: Vec<&str>) -> Result<(), Box<dyn Error>> {
     let raw_path = var("PATH")?;
-    let path = env::split_paths(&raw_path)
+    let mut path = env::split_paths(&raw_path)
         .map(|p| p.to_string_lossy().into_owned())
         .collect::<Vec<String>>();
+    let curr_dir = env::current_dir()?.to_string_lossy().into_owned();
+    path.push(curr_dir);
 
     let builtins: HashMap<&str, &str> = HashMap::from_iter(vec![
         ("echo", "[argument(s): message] print message to stdout"),
         ("this", "print the current location in the file tree"),
+        ("move", "[argument(s): target] change location in file tree"), //NOTE: only supports absolute path
         ("type", "[argument(s): file] print the location of an executable"),
         ("exec", "[argument(s): program, parameters (optional)] run an executable"),
         ("exit", "[argument(s): exit code (optional)] exit the shell"),
@@ -78,6 +81,12 @@ fn process_command(cmd: &str, params: Vec<&str>) -> Result<(), Box<dyn Error>> {
     ]);
 
     match cmd {
+        "move" => {
+            let target = params.get(0).unwrap().to_owned();
+            env::set_current_dir(target)?;
+
+            Ok(())
+        },
         "this" => {
             let loc = env::current_dir()?;
             let dir = fs::read_dir(loc)?;
@@ -95,6 +104,7 @@ fn process_command(cmd: &str, params: Vec<&str>) -> Result<(), Box<dyn Error>> {
         },
         "exit" => {
             io::stdout().flush()?;
+            process_command("clr", Vec::new())?;
 
             if params.is_empty() {
                 exit(0);
@@ -182,10 +192,10 @@ fn process_command(cmd: &str, params: Vec<&str>) -> Result<(), Box<dyn Error>> {
                         command.arg(param);
                     }
                     command.status()?;
-                    println!("\n");
+                    println!();
                 },
                 None => {
-                    eprintln!("{cmd}: command not found");
+                    eprintln!("{exec_arg}: command not found");
                 }
             }
             Ok(())
