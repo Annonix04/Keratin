@@ -82,6 +82,12 @@ fn process_command(cmd: &str, params: Vec<&str>) -> Result<(), Box<dyn Error>> {
 
     match cmd {
         "move" => {
+            if params.is_empty() {
+                println!("command failed 'move': no target directory provided");
+
+                return Ok(())
+            }
+
             let dir = params.get(0).unwrap().to_owned();
             let curr = env::current_dir()?;
             let target = Path::new(&dir);
