@@ -54,6 +54,7 @@ fn process_command(cmd: &str, params: Vec<&str>) {
         "echo",
         "path",
         "type",
+        "exec",
     ];
 
     match cmd {
