@@ -1,2 +1,2 @@
 # Keratin
-Shell terminal written in rust as a side project
+Terminal shell written in Rust as a side project
