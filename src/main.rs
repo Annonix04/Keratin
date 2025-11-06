@@ -1,5 +1,6 @@
 use std::{
     path::Path,
+    collections::HashMap,
     process::{
         Command,
         exit,
@@ -17,6 +18,9 @@ use std::{
 const PROMPT: &str = "#~ ";
 
 fn main() {
+    process_command("clr", vec![""]);
+    io::stdout().flush().unwrap();
+
     loop {
         let raw_line = get_command();
 
@@ -52,13 +56,15 @@ fn process_command(cmd: &str, params: Vec<&str>) {
         .map(|p| p.to_string_lossy().into_owned())
         .collect::<Vec<String>>();
 
-    let builtins = vec![
-        "exit",
-        "echo",
-        "path",
-        "type",
-        "exec",
-    ];
+    let builtins: HashMap<&str, &str> = HashMap::from_iter(vec![
+        ("echo", "[argument(s): message] print message to stdout"),
+        ("type", "[argument(s): file] print the location of an executable"),
+        ("exec", "[argument(s): program, parameters (optional)] run an executable"),
+        ("exit", "[argument(s): exit code (optional)] exit the shell"),
+        ("path", "print every directory in the PATH environment variable"),
+        ("clr", "clear the screen"),
+        ("help", "show this screen"),
+    ]);
 
     match cmd {
         "exit" => {
@@ -70,10 +76,25 @@ fn process_command(cmd: &str, params: Vec<&str>) {
 
             exit(params[0].parse::<i32>().unwrap());
         },
+        "help" => {
+            for (k, v) in builtins {
+                println!(" - {k:<5} : {v}");
+            }
+        },
         "echo" => {
             let arg = params.join(" ");
 
             println!("{arg}");
+        },
+        "clr" => {
+            if env::consts::OS == "windows" {
+                Command::new("cmd")
+                    .args(&["/C", "cls"])
+                    .status().unwrap();
+            } else {
+                Command::new("clear")
+                    .status().unwrap();
+            }
         },
         "path" => {
             println!("{path:?}");
@@ -82,7 +103,7 @@ fn process_command(cmd: &str, params: Vec<&str>) {
             let arg = params.get(0).unwrap();
 
             match arg.to_owned() {
-                _ if builtins.contains(arg) => {
+                _ if builtins.contains_key(arg) => {
                     println!("{arg} is a shell builtin");
                 },
                 _ => {
@@ -107,9 +128,8 @@ fn process_command(cmd: &str, params: Vec<&str>) {
                     for param in params[1..].iter() {
                         command.arg(param);
                     }
-                    let child = command.spawn().unwrap();
+                    command.status().unwrap();
                     println!("\n");
-                    child.wait_with_output().unwrap();
                 },
                 None => {
                     eprintln!("{cmd}: command not found");
