@@ -16,6 +16,7 @@ use std::{
         var
     },
 };
+use std::path::PathBuf;
 
 //TODO: implement command history logging w/ timestamps
 const PROMPT: &str = "#~ ";
@@ -83,7 +84,7 @@ fn process_command(cmd: &str, params: Vec<&str>) -> Result<(), Box<dyn Error>> {
     match cmd {
         "move" => {
             if params.is_empty() {
-                println!("command failed 'move': no target directory provided");
+                eprintln!("command failed 'move': no target directory provided");
 
                 return Ok(())
             }
@@ -91,22 +92,21 @@ fn process_command(cmd: &str, params: Vec<&str>) -> Result<(), Box<dyn Error>> {
             let dir = params.get(0).unwrap().to_owned();
             let curr = env::current_dir()?;
             let target = Path::new(&dir);
+            let mut target_buf = PathBuf::from(target);
 
-            if target.is_absolute() {
-                env::set_current_dir(target)?;
-            } else {
-                let target = curr.join(target);
-                env::set_current_dir(target)?;
+            if target.is_relative() {
+                target_buf = curr.join(target);
             }
+            env::set_current_dir(target_buf)?;
 
             Ok(())
         },
         "this" => {
             let loc = env::current_dir()?;
-            let dir = fs::read_dir(loc)?;
+            let dirs = fs::read_dir(loc)?;
 
 
-            for entry in dir {
+            for entry in dirs {
                 let entry = entry?;
                 let file_name = entry.file_name();
 
@@ -162,7 +162,7 @@ fn process_command(cmd: &str, params: Vec<&str>) -> Result<(), Box<dyn Error>> {
             }
             Ok(())
         },
-        "path" => {
+        "PATH" => {
             println!("{path:?}");
             Ok(())
         },
