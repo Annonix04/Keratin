@@ -19,6 +19,9 @@ const PROMPT: &str = "#~ ";
 fn main() {
     loop {
         let raw_line = get_command();
+
+        if raw_line.is_empty() { continue; }
+
         let line = raw_line.split(" ").collect::<Vec<&str>>();
 
         let cmd = line.get(0).unwrap().to_owned();
