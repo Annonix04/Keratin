@@ -1,6 +1,7 @@
 use std::{
-    path::Path,
     fs,
+    error::Error,
+    path::Path,
     collections::HashMap,
     process::{
         Command,
@@ -15,7 +16,6 @@ use std::{
         var
     },
 };
-use std::error::Error;
 
 //TODO: implement command history logging w/ timestamps
 const PROMPT: &str = "#~ ";
@@ -71,7 +71,7 @@ fn process_command(cmd: &str, params: Vec<&str>) -> Result<(), Box<dyn Error>> {
     let builtins: HashMap<&str, &str> = HashMap::from_iter(vec![
         ("echo", "[argument(s): message] print message to stdout"),
         ("this", "print the current location in the file tree"),
-        ("move", "[argument(s): target] change location in file tree"), //NOTE: only supports absolute path
+        ("move", "[argument(s): target] change location in file tree"),
         ("type", "[argument(s): file] print the location of an executable"),
         ("exec", "[argument(s): program, parameters (optional)] run an executable"),
         ("exit", "[argument(s): exit code (optional)] exit the shell"),
@@ -82,8 +82,16 @@ fn process_command(cmd: &str, params: Vec<&str>) -> Result<(), Box<dyn Error>> {
 
     match cmd {
         "move" => {
-            let target = params.get(0).unwrap().to_owned();
-            env::set_current_dir(target)?;
+            let dir = params.get(0).unwrap().to_owned();
+            let curr = env::current_dir()?;
+            let target = Path::new(&dir);
+
+            if target.is_absolute() {
+                env::set_current_dir(target)?;
+            } else {
+                let target = curr.join(target);
+                env::set_current_dir(target)?;
+            }
 
             Ok(())
         },
