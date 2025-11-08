@@ -2,10 +2,10 @@ use std::{
     fs,
     error::Error,
     collections::HashMap,
-    path::{Path, PathBuf,},
-    process::{Command, exit,},
-    io::{self, Write,},
-    env::{self, var,},
+    path::{ Path, PathBuf },
+    process::{ Command, exit },
+    io::{ self, Write },
+    env::{ self, var },
 };
 
 //TODO: implement command history logging w/ timestamps
@@ -19,9 +19,8 @@ fn main() {
 
     loop {
         let raw_line = get_command();
-
         if raw_line.is_empty() { continue; }
-
+        //TODO: potentially change to split_once(' ') and collect params more gracefully
         let line = raw_line.trim().split(' ').collect::<Vec<&str>>();
 
         let cmd = line.get(0).unwrap().to_owned();
@@ -56,7 +55,9 @@ fn process_command(cmd: &str, params: Vec<&str>) -> Result<(), Box<dyn Error>> {
     let mut path = env::split_paths(&raw_path)
         .map(|p| p.to_string_lossy().into_owned())
         .collect::<Vec<String>>();
+
     let curr_dir = env::current_dir()?.to_string_lossy().into_owned();
+    let home = if env::consts::OS == "windows" { "USERPROFILE" } else { "HOME" };
     path.push(curr_dir);
 
     let builtins: HashMap<&str, &str> = HashMap::from_iter(vec![
@@ -79,8 +80,8 @@ fn process_command(cmd: &str, params: Vec<&str>) -> Result<(), Box<dyn Error>> {
                 return Ok(())
             }
 
-            let home = if env::consts::OS == "windows" { "USERPROFILE" } else { "HOME" };
             let dir = params.get(0).unwrap().to_owned();
+
             if dir == "~" {
                 env::set_current_dir(var(home)?)?;
 
@@ -98,18 +99,18 @@ fn process_command(cmd: &str, params: Vec<&str>) -> Result<(), Box<dyn Error>> {
 
             Ok(())
         },
+        //TODO: add parameter to view subdirectories without changing current directory
         "this" => {
             let loc = env::current_dir()?;
             let dirs = fs::read_dir(loc)?;
 
-
             for entry in dirs {
                 let entry = entry?;
                 let file_name = entry.file_name();
-
                 let res = file_name.to_str().unwrap();
-                if entry.file_type()?.is_dir() { print!("D-") } else { print!("F-") }
-                println!("{res}")
+
+                if entry.file_type()?.is_dir() { print!("(D)-") } else { print!("(F)-") }
+                println!("[{res}]")
             }
 
             Ok(())
@@ -121,7 +122,6 @@ fn process_command(cmd: &str, params: Vec<&str>) -> Result<(), Box<dyn Error>> {
             if params.is_empty() {
                 exit(0);
             }
-
             exit(params[0].parse::<i32>()?);
         },
         "help" => {
@@ -158,6 +158,7 @@ fn process_command(cmd: &str, params: Vec<&str>) -> Result<(), Box<dyn Error>> {
                 Command::new("clear")
                     .status()?;
             }
+
             Ok(())
         },
         "PATH" => {
@@ -185,11 +186,13 @@ fn process_command(cmd: &str, params: Vec<&str>) -> Result<(), Box<dyn Error>> {
                     }
                 }
             }
+
             Ok(())
         },
         "exec" => {
             if let None = params.get(0) {
                 eprintln!("command failed 'exec': please provide an argument");
+
                 return Ok(())
             }
 
@@ -210,6 +213,7 @@ fn process_command(cmd: &str, params: Vec<&str>) -> Result<(), Box<dyn Error>> {
                     eprintln!("{exec_arg}: command not found");
                 }
             }
+
             Ok(())
         },
         _ => {
@@ -240,5 +244,6 @@ fn search_for_exec(cmd: &str, paths: Vec<String>) -> Option<String> {
             return Some(arg_path);
         }
     }
+
     None
 }
