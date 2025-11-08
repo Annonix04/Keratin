@@ -2,22 +2,10 @@ use std::{
     fs,
     error::Error,
     collections::HashMap,
-    path::{
-        Path,
-        PathBuf
-    },
-    process::{
-        Command,
-        exit,
-    },
-    io::{
-        self,
-        Write
-    },
-    env::{
-        self,
-        var
-    },
+    path::{Path, PathBuf,},
+    process::{Command, exit,},
+    io::{self, Write,},
+    env::{self, var,},
 };
 
 //TODO: implement command history logging w/ timestamps
@@ -78,7 +66,7 @@ fn process_command(cmd: &str, params: Vec<&str>) -> Result<(), Box<dyn Error>> {
         ("type", "[argument(s): file] print the location of an executable"),
         ("exec", "[argument(s): program, parameters (optional)] run an executable"),
         ("exit", "[argument(s): exit code (optional)] exit the shell"),
-        ("path", "print every directory in the PATH environment variable"),
+        ("PATH", "print every directory in the PATH environment variable"),
         ("clr", "clear the screen"),
         ("help", "[argument(s): shell command (optional)] show this screen or information about a command"),
     ]);
@@ -120,6 +108,7 @@ fn process_command(cmd: &str, params: Vec<&str>) -> Result<(), Box<dyn Error>> {
                 let file_name = entry.file_name();
 
                 let res = file_name.to_str().unwrap();
+                if entry.file_type()?.is_dir() { print!("D-") } else { print!("F-") }
                 println!("{res}")
             }
 
