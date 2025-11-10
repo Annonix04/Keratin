@@ -99,9 +99,12 @@ fn process_command(cmd: &str, params: Vec<&str>) -> Result<(), Box<dyn Error>> {
 
             Ok(())
         },
-        //TODO: add parameter to view subdirectories without changing current directory
         "this" => {
-            let loc = env::current_dir()?;
+            let mut loc = env::current_dir()?;
+            if params.get(0).is_some() {
+                loc = loc.join(params.get(0).unwrap().to_owned());
+            }
+
             let dirs = fs::read_dir(loc)?;
 
             for entry in dirs {
