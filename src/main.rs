@@ -62,7 +62,7 @@ fn process_command(cmd: &str, params: Vec<&str>) -> Result<(), Box<dyn Error>> {
 
     let builtins: HashMap<&str, &str> = HashMap::from_iter(vec![
         ("echo", "[argument(s): message] print message to stdout"),
-        ("this", "print the current location in the file tree"),
+        ("this", "[argument(s): rel path (optional)] print the current location in the file tree"),
         ("move", "[argument(s): target] change location in file tree"),
         ("type", "[argument(s): file] print the location of an executable"),
         ("exec", "[argument(s): program, parameters (optional)] run an executable"),
