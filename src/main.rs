@@ -5,7 +5,7 @@ use std::{
     path::{ Path, PathBuf },
     process::{ Command, exit },
     io::{ self, Write },
-    env::{ self, var },
+    env::{ self, var, consts::OS },
 };
 
 //TODO: implement command history logging w/ timestamps
@@ -57,7 +57,7 @@ fn process_command(cmd: &str, params: Vec<&str>) -> Result<(), Box<dyn Error>> {
         .collect::<Vec<String>>();
 
     let curr_dir = env::current_dir()?.to_string_lossy().into_owned();
-    let home = if env::consts::OS == "windows" { "USERPROFILE" } else { "HOME" };
+    let home = if OS == "windows" { "USERPROFILE" } else { "HOME" };
     path.push(curr_dir);
 
     let builtins: HashMap<&str, &str> = HashMap::from_iter(vec![
@@ -130,7 +130,7 @@ fn process_command(cmd: &str, params: Vec<&str>) -> Result<(), Box<dyn Error>> {
         "help" => {
             if params.is_empty() {
                 for (k, v) in builtins {
-                    println!(" - {k:<5} : {v}");
+                    println!("\t- {k:<5} : {v}");
                 }
             } else {
                 let target = params
@@ -142,7 +142,7 @@ fn process_command(cmd: &str, params: Vec<&str>) -> Result<(), Box<dyn Error>> {
                     .unwrap_or_else(|| &"this shell command doesn't exist")
                     .to_owned();
 
-                println!(" - {target:<5} : {text}");
+                println!("\t- {target:<5} : {text}");
             }
             Ok(())
         },
@@ -153,7 +153,7 @@ fn process_command(cmd: &str, params: Vec<&str>) -> Result<(), Box<dyn Error>> {
             Ok(())
         },
         "clr" => {
-            if env::consts::OS == "windows" {
+            if OS == "windows" {
                 Command::new("cmd")
                     .args(&["/C", "cls"])
                     .status()?;
@@ -230,7 +230,7 @@ fn search_for_exec(cmd: &str, paths: Vec<String>) -> Option<String> {
     for folder in paths {
         let arg_path;
 
-        if env::consts::OS == "windows" {
+        if OS == "windows" {
             arg_path = if cmd.ends_with(".exe") {
                 format!("{folder}\\{cmd}")
             } else {
